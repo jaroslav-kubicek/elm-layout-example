@@ -1,7 +1,11 @@
 module Main exposing (..)
 
-import Html exposing (Html, text, div, img)
-import Html.Attributes exposing (src)
+import Element exposing (button, el, image, row, text)
+import Element.Attributes exposing (height, justify, padding, percent, px, spacing, verticalCenter, width)
+import Element.Events exposing (onClick)
+import Html exposing (Html)
+import Style exposing (style)
+
 
 
 ---- MODEL ----
@@ -17,28 +21,49 @@ init =
 
 
 
+---- VIEW ----
+
+type Styles
+    = None
+
+stylesheet : Style.StyleSheet Styles variation
+stylesheet =
+    Style.stylesheet
+        [ style None []
+        ]
+
+
+-- todo: css for buttons, layout for text article with image, variants, grid
+view : Model -> Html Msg
+view model =
+    Element.root stylesheet <|
+        row None
+            [ justify, padding 20, (width << percent) 100 ]
+            [ image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
+            , row None
+                [ spacing 20, verticalCenter ]
+                [ button <| el None [onClick JustDebug] (text "Blog")
+                , button <| el None [onClick JustDebug] (text "About")
+                , button <| el None [onClick JustDebug] (text "Contacts")
+                ]
+            ]
+
+
 ---- UPDATE ----
 
 
 type Msg
-    = NoOp
+    = JustDebug
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
-
-
-
----- VIEW ----
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        []
-
-
+    case msg of
+        JustDebug ->
+            let
+                _ = Debug.log "info" "We do nothing, just view."
+            in
+                ( model, Cmd.none )
 
 ---- PROGRAM ----
 
