@@ -13,22 +13,23 @@ import Style exposing (hover, prop, style)
 
 ---- MODEL ----
 
-
-type alias Model =
-    { device: Maybe Device
-    , menuItemHovered: (MenuItem, Bool)
-    }
-
-
 type MenuItem
     = Blog
     | About
     | Contacts
 
+type ExpandedItem = Expand MenuItem Bool
+
+
+type alias Model =
+    { device: Maybe Device
+    , expandedMenuItem: ExpandedItem
+    }
+
 
 init : ( Model, Cmd Msg )
 init =
-    ( {device = Nothing, menuItemHovered = (Blog, False)}, Cmd.none )
+    ( {device = Nothing, expandedMenuItem = Expand Blog False}, Cmd.none )
 
 
 
@@ -58,14 +59,14 @@ view model =
                 ]
             }
             []
-            [ named "header" (topBar model.device model.menuItemHovered)
+            [ named "header" (topBar model.device model.expandedMenuItem)
             , named "content" content
             , named "footer" footer
             ]
 
 
-topBar : Maybe Device -> (MenuItem, Bool) -> Element.Element Styles variation Msg
-topBar device menuItemHovered =
+topBar : Maybe Device -> ExpandedItem -> Element.Element Styles variation Msg
+topBar device expandedMenuItem =
     row None
         [ justify, padding 20, (width << percent) 100 ]
         [ image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
@@ -75,24 +76,24 @@ topBar device menuItemHovered =
                 if device.phone || device.tablet then
                     mobileNav
                 else
-                    desktopNav menuItemHovered
-            Nothing -> desktopNav menuItemHovered
+                    desktopNav expandedMenuItem
+            Nothing -> desktopNav expandedMenuItem
         ]
 
 mobileNav =
     el None [] (text "TODO")
 
-desktopNav menuItemHovered =
+desktopNav expandedMenuItem =
     nav <| row None
         [ spacing 20, verticalCenter ]
         [ el None
             [ onClick JustDebug
-            , onMouseEnter (MenuItemHovered (Blog, True))
-            , onMouseLeave (MenuItemHovered (Blog, False))
+            , onMouseEnter (OnMenuItemExpand Blog True)
+            , onMouseLeave (OnMenuItemExpand Blog False)
             ]
             (text "Blog") |> button
                 |> below
-                    [ column None (getSubmenuAttributes menuItemHovered)
+                    [ column None (getSubmenuAttributes Blog expandedMenuItem)
                         [ el None [] (text "Tech")
                         , el None [] (text "Thoughs")
                         , el None [] (text "Travel")
@@ -102,8 +103,8 @@ desktopNav menuItemHovered =
         , button <| el None [onClick JustDebug] (text "Contacts")
         ]
 
-getSubmenuAttributes menuItemHovered =
-     if menuItemHovered == (Blog, True) then
+getSubmenuAttributes menuItem expandedMenuItem =
+     if expandedMenuItem == Expand menuItem True then
         [center]
      else
         [center, hidden ]
@@ -127,7 +128,7 @@ footer =
 
 type Msg
     = JustDebug
-    | MenuItemHovered (MenuItem, Bool)
+    | OnMenuItemExpand MenuItem Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -138,8 +139,8 @@ update msg model =
                 _ = Debug.log "info" "We do nothing, just view."
             in
                 ( model, Cmd.none )
-        MenuItemHovered (menuItem, isHover) ->
-                ( {model | menuItemHovered = (menuItem, isHover)}, Cmd.none )
+        OnMenuItemExpand menuItem isExpanded ->
+                ( {model | expandedMenuItem = Expand menuItem isExpanded}, Cmd.none )
 
 ---- PROGRAM ----
 
