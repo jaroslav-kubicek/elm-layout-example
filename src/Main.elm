@@ -1,36 +1,30 @@
 module Main exposing (..)
 
-import Element exposing (Element, Device, area, below, button, column, el, grid, image, named, namedGrid, nav, node, row, span, spanAll, text, textLayout, when)
-import Element.Attributes exposing (center, fill, height, hidden, justify, padding, percent, px, spacing, verticalCenter, width)
-import Element.Events exposing (onClick, onMouseEnter, onMouseLeave)
+import Element exposing (Device, Element, area, below, button, column, el, grid, image, named, namedGrid, nav, node, onRight, row, span, spanAll, text, textLayout, when, wrappedColumn)
+import Element.Attributes exposing (alignRight, center, class, fill, height, hidden, justify, padding, percent, px, spacing, verticalCenter, width)
+import Element.Events exposing (on, onClick, onMouseOut, onMouseOver)
 import Html exposing (Html)
 import RandomArticle exposing (firstParagraph, secondParagraph, subtitle)
 import Style exposing (hover, prop, style)
-
 
 (=>) =
     (,)
 
 ---- MODEL ----
 
-type MenuItem
-    = Blog
-    | About
-    | Contacts
-
-type ExpandedItem = Expand MenuItem Bool
-
-
 type alias Model =
     { device: Maybe Device
-    , expandedMenuItem: ExpandedItem
     }
 
+type alias Event =
+    { title: String
+    , image: String
+    , date: String
+    }
 
 init : ( Model, Cmd Msg )
 init =
-    ( {device = Nothing, expandedMenuItem = Expand Blog False}, Cmd.none )
-
+    ( {device = Nothing}, Cmd.none )
 
 
 ---- VIEW ----
@@ -45,13 +39,12 @@ stylesheet =
         [ style None []
         ]
 
-
--- todo: css for buttons, layout for text article with image, variants, grid
+-- TODO responsiveness, styles for buttons & text
 view : Model -> Html Msg
 view model =
     Element.layout stylesheet <|
         namedGrid None
-            { columns = [fill 1, px 200]
+            { columns = [fill 1, px 250]
             , rows =
                 [ px 90 => [spanAll "header"]
                 , fill 1 => [span 1 "content", span 1 "sidebar"]
@@ -59,14 +52,14 @@ view model =
                 ]
             }
             []
-            [ named "header" (topBar model.device model.expandedMenuItem)
+            [ named "header" (topBar model.device)
             , named "content" content
+            , named "sidebar" sidebar
             , named "footer" footer
             ]
 
-
-topBar : Maybe Device -> ExpandedItem -> Element.Element Styles variation Msg
-topBar device expandedMenuItem =
+topBar : Maybe Device -> Element.Element Styles variation Msg
+topBar device =
     row None
         [ justify, padding 20, (width << percent) 100 ]
         [ image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
@@ -76,24 +69,23 @@ topBar device expandedMenuItem =
                 if device.phone || device.tablet then
                     mobileNav
                 else
-                    desktopNav expandedMenuItem
-            Nothing -> desktopNav expandedMenuItem
+                    desktopNav
+            Nothing -> desktopNav
         ]
 
 mobileNav =
     el None [] (text "TODO")
 
-desktopNav expandedMenuItem =
+desktopNav =
     nav <| row None
         [ spacing 20, verticalCenter ]
         [ el None
             [ onClick JustDebug
-            , onMouseEnter (OnMenuItemExpand Blog True)
-            , onMouseLeave (OnMenuItemExpand Blog False)
+            , class "dropdown-switch"
             ]
             (text "Blog") |> button
                 |> below
-                    [ column None (getSubmenuAttributes Blog expandedMenuItem)
+                    [ column None [center, class "dropdown-menu"]
                         [ el None [] (text "Tech")
                         , el None [] (text "Thoughs")
                         , el None [] (text "Travel")
@@ -103,12 +95,6 @@ desktopNav expandedMenuItem =
         , button <| el None [onClick JustDebug] (text "Contacts")
         ]
 
-getSubmenuAttributes menuItem expandedMenuItem =
-     if expandedMenuItem == Expand menuItem True then
-        [center]
-     else
-        [center, hidden ]
-
 content =
     textLayout None
         [padding 50, spacing 10]
@@ -116,6 +102,34 @@ content =
         , el None [] (text firstParagraph)
         , node "h3" <| el None [] (text subtitle)
         , el None [] (text secondParagraph)
+        ]
+
+sidebar =
+    column None
+        [ padding 10, spacing 10 ]
+        [ renderEvent
+            { title = "Workshop | Project: Arduino"
+            , image = "http://bit.ly/2unYcY9"
+            , date = "26. 7. 2017 18:00"
+            }
+        , renderEvent
+            { title = "Future Port Prague 2017"
+            , image = "http://bit.ly/2uOfmPg"
+            , date = "7. 9. 2017 9:00 - 22:00"
+            }
+        ]
+
+renderEvent : Event -> Element Styles variation msg
+renderEvent event =
+    column None
+        []
+        [ el None [] (text event.title)
+        , image event.image None [(width << percent) 100] (text event.title)
+        , row None
+            [justify, verticalCenter, (width << percent) 100]
+            [ el None [] (text event.date)
+            , el None [] (text "Sign up") |> button
+            ]
         ]
 
 footer =
@@ -128,7 +142,6 @@ footer =
 
 type Msg
     = JustDebug
-    | OnMenuItemExpand MenuItem Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -139,8 +152,6 @@ update msg model =
                 _ = Debug.log "info" "We do nothing, just view."
             in
                 ( model, Cmd.none )
-        OnMenuItemExpand menuItem isExpanded ->
-                ( {model | expandedMenuItem = Expand menuItem isExpanded}, Cmd.none )
 
 ---- PROGRAM ----
 
