@@ -1,18 +1,17 @@
 module Main exposing (..)
 
-import Color exposing (rgba)
-import Element exposing (Device, Element, area, below, button, column, el, grid, image, named, namedGrid, nav, node, onRight, row, span, spanAll, text, textLayout, when, wrappedColumn)
-import Element.Attributes exposing (alignRight, center, class, fill, height, hidden, justify, padding, paddingXY, percent, px, spacing, verticalCenter, width)
+import Element exposing (..)
+import Element.Attributes exposing (..)
 import Element.Events exposing (on, onClick, onMouseOut, onMouseOver)
 import Html exposing (Html)
 import List exposing (map)
+import Window
 import RandomArticle exposing (firstParagraph, secondParagraph, subtitle)
-import Style exposing (hover, prop, style)
-import Style.Color as Color
-import Style.Border as Border
-import Style.Font as Font
-import Style.Scale as Scale
+import Stylesheets exposing (Styles(..), stylesheet)
+import MessageTypes exposing (Msg(..))
+import TopBar exposing (..)
 
+(=>) : a -> b -> ( a, b )
 (=>) =
     (,)
 
@@ -35,68 +34,11 @@ init =
 
 ---- VIEW ----
 
-scaled =
-    Scale.modular 16 1.2
-
-type Styles
-    = None
-    | RootStyle
-    | TopBarStyle
-    | MenuButtonStyle
-    | MenuDropdownStyle
-    | MenuDropdownItem
-    | EventStyle
-    | EventTitleStyle
-
-stylesheet : Style.StyleSheet Styles variation
-stylesheet =
-    Style.stylesheet
-        [ style None []
-        , style RootStyle
-            [ Font.typeface ["courier"]
-            , Font.size (scaled 1)
-            ]
-        , style TopBarStyle
-            [ Color.background (rgba 230 230 230 0.5)
-            ]
-        , style MenuButtonStyle
-            [ Color.background Color.white
-            , Color.border (rgba 0 160 160 0.7)
-            , Color.text (rgba 0 160 160 0.7)
-            , Border.all 1
-            , Border.rounded 3
-            , Style.cursor "pointer"
-            ]
-        , style MenuDropdownStyle
-            [ Color.background (rgba 255 255 255 0.7)
-            , Color.border (rgba 0 160 160 0.7)
-            , Border.all 1
-            , Border.rounded 3
-            , Style.cursor "pointer"
-            , prop "z-index" "1"
-            ]
-        , style MenuDropdownItem
-            [ hover
-                [ Color.background (rgba 0 160 160 0.7)
-                , Color.text Color.white
-                ]
-            ]
-        , style EventStyle
-            [ Border.all 1
-            , Color.border (rgba 0 200 200 0.5)
-            , Font.size (scaled -1)
-            ]
-        , style EventTitleStyle
-            [ Color.background (rgba 0 200 200 0.1)
-            , Font.bold
-            ]
-        ]
-
--- TODO responsiveness, styles for buttons & text
+-- TODO responsiveness
 view : Model -> Html Msg
 view model =
     Element.layout stylesheet <|
-        namedGrid RootStyle
+        namedGrid Root
             { columns = [fill 1, px 250]
             , rows =
                 [ px 90 => [spanAll "header"]
@@ -113,49 +55,13 @@ view model =
 
 topBar : Maybe Device -> Element.Element Styles variation Msg
 topBar device =
-    row TopBarStyle
-        [ justify, padding 20, (width << percent) 100 ]
-        [ image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
-        , node "h1" <| el None [verticalCenter] (text "Elm")
-        , case device of
-            Just device ->
-                if device.phone || device.tablet then
-                    mobileNav
-                else
-                    desktopNav
-            Nothing -> desktopNav
-        ]
-
-mobileNav =
-    el None [] (text "TODO")
-
-desktopNav =
-    nav <| row None
-        [ spacing 20, verticalCenter ]
-        [ el MenuButtonStyle
-            [ onClick JustDebug
-            , paddingXY 15 5
-            , class "dropdown-switch"
-            ]
-            (text "Blog") |> button
-                |> below
-                    [ column MenuDropdownStyle [center, class "dropdown-menu"]
-                        [ el MenuDropdownItem [paddingXY 15 5] (text "Tech")
-                        , el MenuDropdownItem [paddingXY 15 5] (text "Thoughs")
-                        , el MenuDropdownItem [paddingXY 15 5] (text "Travel")
-                        ]
-                    ]
-        , el MenuButtonStyle
-            [ onClick JustDebug
-            , paddingXY 15 5
-            ]
-            (text "About") |> button
-        , el MenuButtonStyle
-            [ onClick JustDebug
-            , paddingXY 15 5
-            ]
-            (text "Contacts") |> button
-        ]
+    case device of
+                Just device ->
+                    if device.phone || device.tablet then
+                        mobileNav
+                    else
+                        topBarDesktop
+                Nothing -> topBarDesktop
 
 content =
     textLayout None
@@ -169,7 +75,7 @@ content =
 sidebar =
     column None
         [ padding 20, spacing 10 ]
-        (map
+        (List.map
             renderEvent
             [ { title = "Workshop | Arduino"
               , image = "http://bit.ly/2unYcY9"
@@ -186,7 +92,7 @@ renderEvent : Event -> Element Styles variation msg
 renderEvent event =
     column EventStyle
         []
-        [ el EventTitleStyle [paddingXY 10 5] (text event.title)
+        [ el EventTitle [paddingXY 10 5] (text event.title)
         , image event.image None [(width << percent) 100] (text event.title)
         , row None
             [justify, verticalCenter, (width << percent) 100]
@@ -202,11 +108,6 @@ footer =
 
 ---- UPDATE ----
 
-
-type Msg
-    = JustDebug
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -215,6 +116,17 @@ update msg model =
                 _ = Debug.log "info" "We do nothing, just view."
             in
                 ( model, Cmd.none )
+        Resize size ->
+            let
+                device = classifyDevice size
+            in
+                ( { model | device = Just device }, Cmd.none)
+
+
+---- SUBSCRIPTIONS
+
+subscriptions model =
+    Window.resizes Resize
 
 ---- PROGRAM ----
 
@@ -225,5 +137,5 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
