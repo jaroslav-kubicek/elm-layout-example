@@ -2,9 +2,9 @@ module Main exposing (..)
 
 import Element exposing (..)
 import Element.Attributes exposing (..)
-import Element.Events exposing (on, onClick, onMouseOut, onMouseOver)
 import Html exposing (Html)
 import List exposing (map)
+import Task
 import Window
 import RandomArticle exposing (firstParagraph, secondParagraph, subtitle)
 import Stylesheets exposing (Styles(..), stylesheet)
@@ -29,7 +29,7 @@ type alias Event =
 
 init : ( Model, Cmd Msg )
 init =
-    ( {device = Nothing}, Cmd.none )
+    ( {device = Nothing}, Task.perform Resize Window.size )
 
 
 ---- VIEW ----
@@ -41,9 +41,9 @@ view model =
         namedGrid Root
             { columns = [fill 1, px 250]
             , rows =
-                [ px 90 => [spanAll "header"]
+                [ fill 0 => [spanAll "header"]
                 , fill 1 => [span 1 "content", span 1 "sidebar"]
-                , px 100 => [spanAll "footer"]
+                , fill 0 => [spanAll "footer"]
                 ]
             }
             []
@@ -58,7 +58,7 @@ topBar device =
     case device of
                 Just device ->
                     if device.phone || device.tablet then
-                        mobileNav
+                        topBarMobile
                     else
                         topBarDesktop
                 Nothing -> topBarDesktop

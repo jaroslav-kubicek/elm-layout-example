@@ -10,11 +10,14 @@ import MessageTypes exposing (Msg(..))
 topBarDesktop : Element.Element Styles variation Msg
 topBarDesktop =
     row TopBar
-        [ justify, padding 20, (width << percent) 100 ]
-        [ image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
-        , node "h1" <| el None [verticalCenter] (text "Elm")
+        [ justify, padding 20, verticalCenter, (width << percent) 100 ]
+        [ logo
+        , node "h1" <| el None [] (text "Elm")
         , desktopNav
         ]
+
+topBarMobile =
+    el None [] empty
 
 desktopNav =
     nav <| row None
@@ -46,3 +49,6 @@ desktopNav =
 
 mobileNav =
     el None [] (text "TODO")
+
+logo =
+    image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
