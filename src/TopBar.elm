@@ -1,4 +1,4 @@
-module TopBar exposing (..)
+module TopBar exposing (topBarMobile, topBarDesktop)
 
 import Element
 import Element exposing (..)
@@ -7,48 +7,77 @@ import Element.Events exposing (onClick)
 import Stylesheets exposing (Styles(..), stylesheet)
 import MessageTypes exposing (Msg(..))
 
+type alias MenuItem =
+    { label: String
+    , subItems: List String
+    }
+
+menuItems : List MenuItem
+menuItems =
+    [ { label = "Blog"
+      , subItems =
+            [ "Tech"
+            , "Thoughs"
+            , "Travel"
+            ]
+      }
+    , { label = "About", subItems = [] }
+    , { label = "Contacts", subItems = [] }
+    ]
+
+getSubMenuItem subMenuItem =
+    el MenuDropdownItem [paddingXY 15 5] (text subMenuItem)
+
+getMenuItem menuItem =
+    let
+        subMenuFn = if (List.length menuItem.subItems) == 0 then
+                        \a -> a
+                    else
+                        \menuElement ->
+                            below
+                            [ column MenuDropdown
+                                [center, class "dropdown-menu"]
+                                (List.map getSubMenuItem menuItem.subItems)
+                            ]
+                            menuElement
+    in
+        el MenuButton
+            [ onClick JustDebug
+            , paddingXY 15 5
+            , class "dropdown-switch"
+            ]
+            (text menuItem.label)
+                |> button |> subMenuFn
+
 topBarDesktop : Element.Element Styles variation Msg
 topBarDesktop =
     row TopBar
-        [ justify, padding 20, verticalCenter, (width << percent) 100 ]
+        [ justify, padding 20, verticalCenter]
         [ logo
         , node "h1" <| el None [] (text "Elm")
         , desktopNav
         ]
 
-topBarMobile =
-    el None [] empty
-
+desktopNav : Element.Element Styles variation Msg
 desktopNav =
     nav <| row None
         [ spacing 20, verticalCenter ]
-        [ el MenuButton
-            [ onClick JustDebug
-            , paddingXY 15 5
-            , class "dropdown-switch"
+        (List.map getMenuItem menuItems)
+
+topBarMobile =
+    row TopBar
+        [ justify, verticalCenter, paddingXY 10 5 ]
+        [ row None
+            [spacing 10, verticalCenter]
+            [ logo
+            , node "h1" <| el None [] (text "Elm")
             ]
-            (text "Blog") |> button
-                |> below
-                    [ column MenuDropdown [center, class "dropdown-menu"]
-                        [ el MenuDropdownItem [paddingXY 15 5] (text "Tech")
-                        , el MenuDropdownItem [paddingXY 15 5] (text "Thoughs")
-                        , el MenuDropdownItem [paddingXY 15 5] (text "Travel")
-                        ]
-                    ]
-        , el MenuButton
-            [ onClick JustDebug
-            , paddingXY 15 5
-            ]
-            (text "About") |> button
-        , el MenuButton
-            [ onClick JustDebug
-            , paddingXY 15 5
-            ]
-            (text "Contacts") |> button
+        , mobileNav
         ]
 
+mobileNav : Element.Element Styles variation Msg
 mobileNav =
     el None [] (text "TODO")
 
 logo =
-    image "/logo.svg" None [(width << px) 50, (height << px) 50] (text "TODO logo")
+    image "/logo.svg" None [(width << px) 50, (height << px) 50] empty
